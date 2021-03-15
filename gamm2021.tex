@@ -1,0 +1,286 @@
+\documentclass{beamer}
+\usepackage{amsmath}
+\usetheme[numbering=fraction]{metropolis}
+\usepackage[T1]{fontenc}
+\usepackage[default]{lato}
+\usepackage{mathpazo}
+\usepackage{textcomp}
+\usepackage{mathtools}
+\usefonttheme{professionalfonts}
+\usefonttheme[onlymath]{serif}
+
+\overfullrule=2cm
+
+\setbeamertemplate{footline}{%
+  \begin{beamercolorbox}[wd=\textwidth, sep=1ex]{footline}%
+    \usebeamerfont{page number in head/foot}%
+    \usebeamertemplate*{frame footer}
+    \hfill%
+    \usebeamertemplate*{frame numbering}
+    \quad% 
+  \end{beamercolorbox}%
+}
+
+\usepackage[giveninits=true, style=verbose]{biblatex}
+\addbibresource{presentation.bib}
+
+\usepackage{siunitx}
+
+% Table packages.
+\usepackage{booktabs}
+
+\usepackage{makecell}
+\usepackage{tikz}
+
+\usepackage[beamer,customcolors]{hf-tikz}
+\usetikzlibrary{calc}
+
+% This block allows to include images and bib files relative to this TeX file.
+%\newcommand{\PathToTexFile}{02-presentation-v1}
+\graphicspath{assets/}
+
+\pdfstringdefDisableCommands{%
+  \def\\{}%
+  \def\texttt#1{<#1>}%
+}
+
+\setbeamercolor{background canvas}{fg=black,bg=white}
+
+% Define useful colors.
+\colorlet{black}{black!50!gray}
+\colorlet{green}{green!50!gray}
+\colorlet{blue}{blue!50!gray}
+%\colorlet{red}{red!5}
+
+\colorlet{CBlue}{blue!15}
+\colorlet{CBlueD}{blue!50!gray}
+\colorlet{CRed}{red!15}
+\colorlet{CRedD}{red!50!gray}
+\colorlet{COrange}{orange}
+
+\usepackage[protrusion,expansion,kerning,spacing,final]{microtype}
+\microtypecontext{spacing=nonfrench}
+
+\title{Estimating divergence-free flows via neural networks}
+\author{Dmitry I.\ Kabanov, Luis Espath, Ra\'ul F. Tempone}
+\institute{}
+\date{18 March 2021}
+\def\titlepage{%
+  \usebeamertemplate{title page}%<---
+}
+\titlegraphic{\vspace{6cm}\hspace{4.3cm}\includegraphics{rwth-logo}\phantom{text}\par}
+
+% ------------------------------------------------------------------------------
+% Useful mathematical macros
+\newcommand{\Data}{\vec{D}}
+\newcommand{\DataExt}{\widetilde{\vec{D}}}
+\newcommand{\MSE}{\ensuremath{\text{MSE}}}
+\newcommand{\T}{\ensuremath{\text{T}}}
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\newcommand{\mat}[1]{\boldsymbol{#1}}
+\newcommand{\VTheta}{\ensuremath{\vec{\theta}}}
+\newcommand{\VLambda}{\ensuremath{\vec{\lambda}}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\R}{\mathbb R}
+\newcommand{\UNN}[1][\text{NN}]{u_{#1}}
+\newcommand{\FNN}[1][\text{NN}]{f_{#1}}
+\newcommand{\NonlinOp}{\mathcal N\!}
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}
+
+% Modify margins for a slide.
+% https://tex.stackexchange.com/questions/160825/modifying-margins-for-one-slide
+\newcommand\Wider[2][3em]{%
+\makebox[\linewidth][c]{%
+  \begin{minipage}{\dimexpr\textwidth+#1\relax}
+  \raggedright#2
+  \end{minipage}%
+  }%
+}
+% Useful mathematical macros (end)
+% ------------------------------------------------------------------------------
+
+\begin{document}
+\maketitle
+
+% ------------------------------------------------------------------------------
+% Common part
+\begin{frame}{Outline}
+\begin{itemize}
+    \item Problem formulation
+    \item How neural networks are used for the problem
+    \item Intro to neural networks
+    \item Example 1: synthetic dataset
+    \item Example 2: real wind dataset from Sweden
+\end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Problem formulation}
+
+Consider dataset
+\[
+    \vec{D} = \left\{\vec{x}_i, \vec{u}_i\right\}, \quad i = 1, ..., N
+\]
+where $\vec{x}_i = (x_i, y_i) \in \mathcal D \subset \R^2$ is a spatial point,
+$\vec{u}_i = (u_i, v_i) \in \R^2$ is the velocity field at point $i$.
+
+Assume that the velocity field $\vec u (\vec x)$ satisfies the incompressibility
+condition, at least, approximately:
+\[
+    \nabla \cdot \vec u (\vec x) \approx 0.
+\]
+
+\textbf{Goal}: estimate the velocity field $\vec u  (\vec x)$ using the above
+condition.
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Problem formulation}
+Instead of the true velocity field, we seek for estimator
+$\hat{\vec u} (\vec x; \theta)$,
+parameterized by $\theta \in \R^n$, that satisfies
+the measurements and the incompressibility condition.
+
+Introduce an additional set of $P$ points, at which the condition is enforced.
+
+Then the problem is find
+\[
+    \arg \min_\theta \quad
+        \frac{1}{N} \sum_{i=1}^N \norm{\vec u_i - \hat{\vec u}(\vec x_i; \theta)}^2_2
+        \ + \;
+        \frac{\gamma}{P} \sum_{i=1}^P \left( \nabla \cdot \hat{\vec u}(\vec x_i; \theta)\right)^2.
+\]
+where $\gamma$ is a regularization parameter that determines how strongly
+the incompressibility condition is enforced.
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Estimator function}
+
+We use a neural network as an estimator function $\hat{\vec u}(\vec x; \theta)$.
+
+This neural network is of type ''multi-layer perceptron``:
+\[
+    \hat{\vec u}(\vec x; \vec \theta) = A \circ F_{L-1} \circ \dots \circ F_1(\vec x)
+\]
+where
+\begin{itemize}
+ \item Hidden layers $F_j : \R^{n_{j-1}} \to \R^{n_j}$ are defined as
+\[
+    F_j\left( \vec z_{j-1} \right) = \sigma \left( \mat W_j \vec z_{j-1} + \vec b_j \right)
+\]
+with $\sigma$ being a nonlinear function applied componentwise
+
+\item $A(z_L) = W_L z_L + b_L$ the output layer
+
+\item Parameter vector $\vec \theta$ is a concatenation of weight matrices $\mat W_j$
+and bias vectors $\vec b_j$, $j=1,\dots,L$.
+\end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Visualization of a neural network????}
+Should I have this slide? 
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Other details}
+
+\begin{itemize}
+    \item Points where divergence-free condition is enforced, are on the uniform grid
+    \item To solve the optimization problem, we use ADAM optimizer
+    \item Exponential averaging?
+    \item Codes written with libraries Keras and Tensorflow 2
+\end{itemize}
+
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% Example 1.
+\begin{frame}
+\frametitle{Example 1}
+
+Dataset of synthetic noiseless data  ??????? Exact field?   
+\[
+    \left\{\vec{x}_i, \vec{u}_i\right\}, \quad i = 1, ..., 10
+\]
+where
+\[
+    \vec u(x, y) = \begin{pmatrix}
+        \phantom{-} \cos x \, \sin y\\
+        -\sin x \, \cos y
+    \end{pmatrix}
+\]
+and points $\vec x_i = (x_i, y_i)$ are sampled uniformly from domain $[0; 2\pi]^2$.
+
+This dataset is a Taylor--Green 2D vortex fixed in time.
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Model performance score}
+
+Model performance is measured with $R^2$ score:    
+\[
+    R^2 = 1 - \frac{
+        \sum_{i=1}^N \norm{\vec u_i - \hat{\vec u}(\vec x; \theta)}^2_2
+    }{
+        \sum_{i=1}^N \norm{\vec u_i}^2_2
+    }
+\]
+
+\vspace{0.5cm}
+Interpretation:
+\begin{itemize}
+    \item measure model performance relative to the model that
+          predicts zero velocity field at each point
+    \item perfect model has $R^2=1$.
+\end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{$R^2$ score versus $\gamma$}
+We train neural network by minimizing misfit + $\gamma$ div-free condition
+
+\vspace{0.5cm}
+\begin{figure}
+\centering
+\includegraphics[scale=0.65]{assets/R2-vs-gamma.pdf}    
+\end{figure}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Error fields}
+
+\Wider[8em]{%
+\begin{columns}[t,totalwidth=\linewidth]
+\begin{column}{0.5\linewidth}
+\begin{figure}
+\centering
+\includegraphics[scale=0.37]{assets/{error-gamma=0.00e+00}.pdf}
+\end{figure}
+\end{column}
+\begin{column}{0.5\linewidth}
+\begin{figure}
+\centering
+\includegraphics[scale=0.37]{assets/{error-gamma=1.00e-02}.pdf}    
+\end{figure}
+\end{column}
+\end{columns}
+}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+
+
+\begin{frame}[standout]
+\Huge
+Thank you!
+\end{frame}
+
+\end{document}
