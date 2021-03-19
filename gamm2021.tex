@@ -290,12 +290,14 @@ and bias vectors $\vec b_j$, $j=1,\dots,L$.
 
 \end{frame}
 
+\section{Example 1}
+
 % -----------------------------------------------------------------------------
 % Example 1.
 \begin{frame}
 \frametitle{Example 1}
 
-Dataset of synthetic noiseless data  ??????? Exact field?   
+Dataset of synthetic noiseless data
 \[
     \left\{\vec{x}_i, \vec{u}_i\right\}, \quad i = 1, ..., 10
 \]
@@ -309,6 +311,19 @@ where
 and points $\vec x_i = (x_i, y_i)$ are sampled uniformly from domain $[0; 2\pi]^2$.
 
 This dataset is a Taylor--Green 2D vortex fixed in time.
+
+Test data are $21\times21$ uniform grid in this domain.
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Example 1, true field}
+
+\vspace{1cm}
+\begin{figure}
+\centering
+\includegraphics[scale=0.65]{assets/stream-plot-true.pdf}
+\end{figure}
 \end{frame}
 
 % -----------------------------------------------------------------------------
@@ -336,7 +351,7 @@ Interpretation:
 % -----------------------------------------------------------------------------
 \begin{frame}
 \frametitle{$R^2$ score versus $\gamma$}
-We train neural network by minimizing misfit + $\gamma$ div-free condition
+Training by minimizing misfit + $\gamma$ div-free condition
 
 \vspace{0.5cm}
 \begin{figure}
@@ -348,7 +363,16 @@ We train neural network by minimizing misfit + $\gamma$ div-free condition
 % -----------------------------------------------------------------------------
 \begin{frame}
 \frametitle{Error fields}
+Training by minimizing misfit + $\gamma$ div-free condition
 
+\begin{textblock*}{50pt}(90pt,90pt)
+    $\gamma = 0$
+\end{textblock*}
+\begin{textblock*}{50pt}(240pt,90pt)
+    $\gamma = 10^{-2}$
+\end{textblock*}
+
+\vspace{0.5cm}
 \Wider[8em]{%
 \begin{figure}
 \centering
