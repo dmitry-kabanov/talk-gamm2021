@@ -126,7 +126,6 @@
 \begin{itemize}
     \item Problem formulation
     \item How neural networks are used for the problem
-    \item Intro to neural networks
     \item Example 1: synthetic dataset
     \item Example 2: real wind dataset from Sweden
 \end{itemize}
@@ -142,8 +141,8 @@ Consider dataset
 where $\vec{x}_i = (x_i, y_i) \in \mathcal D \subset \R^2$ is a spatial point,
 $\vec{u}_i = (u_i, v_i) \in \R^2$ is the velocity field at point $i$.
 
-Assume that the velocity field $\vec u (\vec x)$ satisfies the incompressibility
-condition, at least, approximately:
+Assume that the velocity field $\vec u (\vec x)$ satisfies the
+divergence-free condition, at least approximately:
 \[
     \nabla \cdot \vec u (\vec x) \approx 0.
 \]
@@ -155,21 +154,44 @@ condition.
 % -----------------------------------------------------------------------------
 \begin{frame}{Problem formulation}
 Instead of the true velocity field, we seek for estimator
-$\hat{\vec u} (\vec x; \theta)$,
-parameterized by $\theta \in \R^n$, that satisfies
-the measurements and the incompressibility condition.
+\[
+    \hat{\vec u} (\vec x; \vec \theta)
+\]
+parameterized by
+\[
+    \vec \theta \in \R^n
+\]    
+that satisfies
+the measurements and the divergence-free condition
+\[
+    \arg \min_{\vec \theta} \quad 
+        \mathbb E \left[ \norm{\vec u(\vec x) - \hat{\vec u}(\vec x; \vec{\theta})}^2_{L^2(\R^2)} \right] +
+        \gamma \norm{\nabla \cdot \hat{\vec u}(\vec x; \vec{\theta})}^2_{L^2(\R)} 
+\]
+where $\gamma$ is a regularization parameter that determines how strongly
+the divergence-free condition is enforced.
+\end{frame}
 
-Introduce an additional set of $P$ points, at which the condition is enforced.
+% -----------------------------------------------------------------------------
+\begin{frame}{Problem formulation}
+\[
+    \arg \min_\theta \quad 
+        \mathbb E \left[ \norm{\vec u(\vec x) - \hat{\vec u}(\vec x; \vec{\theta})}^2_{L^2(\R^2)} \right] +
+        \gamma \norm{\nabla \cdot \hat{\vec u}(\vec x; \vec{\theta})}^2_{L^2(\R)} 
+\]
 
-Then the problem is find
+Finite number of measurements to evaluate the first term. 
+
+Introduce an additional set of $P$ points, at which
+the divergence-free condition is enforced.
+
+Then the problem is to find
 \[
     \arg \min_\theta \quad
         \frac{1}{N} \sum_{i=1}^N \norm{\vec u_i - \hat{\vec u}(\vec x_i; \theta)}^2_2
         \ + \;
-        \frac{\gamma}{P} \sum_{i=1}^P \left( \nabla \cdot \hat{\vec u}(\vec x_i; \theta)\right)^2.
+        \frac{\gamma}{P} \sum_{i=1}^P \left( \nabla \cdot \hat{\vec u}(\vec x_i; \theta)\right)^2
 \]
-where $\gamma$ is a regularization parameter that determines how strongly
-the incompressibility condition is enforced.
 \end{frame}
 
 % -----------------------------------------------------------------------------
@@ -199,8 +221,60 @@ and bias vectors $\vec b_j$, $j=1,\dots,L$.
 
 % -----------------------------------------------------------------------------
 \begin{frame}
-\frametitle{Visualization of a neural network????}
-Should I have this slide? 
+\frametitle{Visualization of a neural network $\R^2 \to \R^2$}
+
+\begin{figure}[t]
+    \centering
+    \def\layersep{2.5cm}
+
+    \begin{tikzpicture}[shorten >=1pt,->,draw=black!50, node distance=\layersep]
+        \tikzstyle{every pin edge}=[<-,shorten <=1pt]
+        \tikzstyle{neuron}=[circle,fill=black!25,minimum size=17pt,inner sep=0pt]
+        \tikzstyle{input neuron}=[neuron, fill=CGreenD];
+        \tikzstyle{output neuron}=[neuron, fill=CRedD];
+        \tikzstyle{hidden neuron}=[neuron, fill=CBlueD];
+        \tikzstyle{annot} = [text width=4em, text centered]
+    
+        % Draw the input layer nodes
+        \foreach \name / \y in {1,...,2}
+        % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+            \node[input neuron, pin=left:Input \#\y] (I-\name) at (0,-1-\y) {};
+    
+        % Draw the hidden layer nodes
+        \foreach \name / \y in {1,...,5}
+            \path[yshift=0.5cm]
+                node[hidden neuron] (H-\name) at (\layersep,-\y cm) {};
+    
+        % Draw the output layer node
+        \node[output neuron,pin={[pin edge={->}]right:Output \#1}, right of=H-2] (O1) at (2.5, -2) {};
+        \node[output neuron,pin={[pin edge={->}]right:Output \#2}, right of=H-4] (O2) at (2.5, -3) {};
+    
+        % Connect every node in the input layer with every node in the
+        % hidden layer.
+        \foreach \source in {1,...,2}
+            \foreach \dest in {1,...,5}
+                \path (I-\source) edge (H-\dest);
+    
+        % Connect every node in the hidden layer with the output layer
+        \foreach \source in {1,...,5}
+            \path (H-\source) edge (O1);
+
+        \foreach \source in {1,...,5}
+            \path (H-\source) edge (O2);
+    
+        % Annotate the layers
+        \node[annot,above of=H-1, node distance=1cm] (hl) {Hidden layer};
+        \node[annot,left of=hl] {Input layer};
+        \node[annot,right of=hl] {Output layer};
+    \end{tikzpicture}
+    %\caption[Network graph for a $(L+1)$-layer perceptron.]{Network graph of a $(L+1)$-layer perceptron with $D$ input units and $C$ output units. The $l^{\text{th}}$ hidden layer contains $m^{(l)}$ hidden units.}
+    \label{fig:multilayer-perceptron}
+\end{figure}
+
+\begin{minipage}{\linewidth}
+\centering
+\tiny[\url{https://texample.net/tikz/examples/neural-network/}, with modifications]
+\end{minipage}
 \end{frame}
 
 % -----------------------------------------------------------------------------
@@ -210,8 +284,8 @@ Should I have this slide?
 \begin{itemize}
     \item Points where divergence-free condition is enforced, are on the uniform grid
     \item To solve the optimization problem, we use ADAM optimizer
-    \item Exponential averaging?
-    \item Codes written with libraries Keras and Tensorflow 2
+    \item Exponential averaging of the parameters is used for prediction
+    \item Code is written using libraries Keras and Tensorflow 2
 \end{itemize}
 
 \end{frame}
