@@ -21,8 +21,11 @@
   \end{beamercolorbox}%
 }
 
-\usepackage[giveninits=true, style=verbose]{biblatex}
-\addbibresource{presentation.bib}
+\usepackage[absolute,overlay]{textpos}
+% \usepackage[texcoord, grid,gridcolor=red!10,subgridcolor=green!10,gridunit=pt] {eso-pic}
+
+%\usepackage[giveninits=true, style=verbose]{biblatex}
+%\addbibresource{presentation.bib}
 
 \usepackage{siunitx}
 
@@ -56,7 +59,13 @@
 \colorlet{CBlueD}{blue!50!gray}
 \colorlet{CRed}{red!15}
 \colorlet{CRedD}{red!50!gray}
+\colorlet{CGreenD}{green!60!gray}
 \colorlet{COrange}{orange}
+
+% tikz settings
+\tikzset{   
+    every path/.style={thick},
+}
 
 \usepackage[protrusion,expansion,kerning,spacing,final]{microtype}
 \microtypecontext{spacing=nonfrench}
