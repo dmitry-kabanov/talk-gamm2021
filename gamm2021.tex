@@ -381,9 +381,106 @@ Training by minimizing misfit + $\gamma$ div-free condition
 }
 \end{frame}
 
+\section{Example 2}
+
 % -----------------------------------------------------------------------------
+% Example 2
+\begin{frame}
+\frametitle{Example 2: Reconstruction of wind field over Sweden}
+
+\begin{columns}
+\begin{column}{0.7\linewidth}
+\begin{itemize}
+    \item We apply a neural network with div-free regularization
+        to the problem of reconstruction of the wind fields over Sweden    
+    \item Data are collected from 165 weather stations in 2018
+    \item Measurements are hourly but a lot of missing data points form
+        different stations
+\end{itemize}
+\end{column}
+\begin{column}{0.3\linewidth}
+    \includegraphics[scale=0.5]{assets/sweden.pdf}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Basic model to compare with}
+
+As a basic model, we use Inverse Distance Weighting (averaging) model, which
+estimates velocity at point $\vec x$ as
+\[
+    \hat{\vec u}_{\text{IDW}}(\vec x) =
+        \frac{\sum_{i=1}^N W(r_{i,j}) \vec u(\vec x)}{\sum_{i=1}^N W(r_{i,j})}
+\]
+where $W$ is a weight: decaying function of distance $r_{i, j}$.
+
+\end{frame}
 
 
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Performance score}
+
+To assess the quality of the model, we estimate the prediction error
+by selecting at random from the dataset T=500 time snapshots and computing
+an average $R^2$ score using five-fold cross-validation:
+\[
+    R^2 = 1 - \frac{%
+        \sum_{i=1}^T \sum_{j=1}^5 \frac{1}{N_{ij}'}
+            \sum_{k=1}^{N_{ij}'} \norm{\vec{u}_{ijk} - \hat{\vec{u}}_{ijk}}^2_2}
+    {%
+        \sum_{i=1}^T \sum_{j=1}^5 \frac{1}{N_{ij}'}
+            \sum_{k=1}^{N_{ij}'} \norm{\vec{u}_{ijk}}^2_2}
+\]
+where $N_{ij}'$ denotes number of test measurements for the $i$th time snapshot
+and $j$th cross-validation fold.
+
+That is, we train $500\times5=2500$ neural networks.
+
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Search for neural network better than the base model}
+
+We train neural networks with configuration specified by a triplet:\\
+Divergence-free multiplier: $\gamma \in \{0, 10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}\}$\\
+Number of neurons in the 1st hidden layer: $h_1 \in \{20, 30\}$\\
+Number of neurons in the 2nd hidden layer: $h_2 \in \{0, 10, 20\}$
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.55]{assets/r2-vs-model.pdf}
+\end{figure}
+\visible<2->{%
+\begin{tikzpicture}[remember picture, overlay]
+\tikzset{shift={(current page.center)}, xshift=2cm, yshift=-1.7cm}
+\node (txt) at (0, 0) {Best model: $\gamma=0.01$, $h_1=20$, $h_2=20$};
+\draw[red,->] (txt) -- ++(-0.3,2.2);
+\end{tikzpicture}
+}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Summary}
+
+\begin{itemize}
+    \item We implemented a neural network which learns divergence-free velocity fields
+    \item True div-free data with scarce measurements greatly benefit from
+        such network: prediction error decreases 4x
+    \item Application to real data of wind velocity measurements over Sweden
+        does not show much advantage of the neural network
+        over simple Inverse Distance Weighting model. Moreover, div-free
+        regularizer improves prediction abilities of the neural network only
+        marginally
+\end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
 \begin{frame}[standout]
 \Huge
 Thank you!
