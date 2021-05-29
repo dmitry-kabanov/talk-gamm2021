@@ -285,3 +285,6 @@ TSWLatexianTemp*
 
 # macOS artifacts
 .DS_Store
+
+# Ignore proceedings subfolder as it contains another Git repo
+proceedings
